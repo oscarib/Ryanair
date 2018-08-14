@@ -1,10 +1,10 @@
 package com.ryanair.oif.interflights.services;
 
-import com.ryanair.oif.interflights.external.api.domain.Route;
+import com.ryanair.oif.interflights.domain.Flight;
 
 import java.util.List;
 
 public interface FlightService {
 
-    List<Route> searchRoutesByDest(String IATACode);
+    List<Flight> getDirectFlights(String departureAirport, String arrivalAirport);
 }

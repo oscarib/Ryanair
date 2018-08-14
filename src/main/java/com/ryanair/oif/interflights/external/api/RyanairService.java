@@ -14,12 +14,22 @@ public class RyanairService {
     @Autowired
     RyanairAPI ryanairAPI;
 
-    //This is supposed to be run in a java8 JVM only
     public List<Route> searchRoutesByDest(String IATACode){
         List<Route> routes = ryanairAPI.getRoutes();
+        return searchRoutesByDest(routes, IATACode);
+    }
+
+    //This is supposed to be run in a java8 JVM only
+    public List<Route> searchRoutesByDest(List<Route> routes, String IATACode){
         Stream<Route> routesCollection = routes.stream();
         Stream<Route> filteredRoutesCollection = routesCollection.filter(item -> item.getAirportTo().equals(IATACode));
-        List<Route> filteredRoutes = filteredRoutesCollection.collect(Collectors.toList());
-        return filteredRoutes;
+        return filteredRoutesCollection.collect(Collectors.toList());
+    }
+
+    //This is supposed to be run in a java8 JVM only
+    public List<Route> searchRoutesByDep(List<Route> routes, String IATACode){
+        Stream<Route> routesCollection = routes.stream();
+        Stream<Route> filteredRoutesCollection = routesCollection.filter(item -> item.getAirportFrom().equals(IATACode));
+        return filteredRoutesCollection.collect(Collectors.toList());
     }
 }
