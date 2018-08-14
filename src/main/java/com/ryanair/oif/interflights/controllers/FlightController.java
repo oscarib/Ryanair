@@ -3,7 +3,9 @@ package com.ryanair.oif.interflights.controllers;
 import com.ryanair.oif.interflights.domain.Flight;
 import com.ryanair.oif.interflights.domain.Leg;
 import com.ryanair.oif.interflights.external.api.RyanairAPI;
+import com.ryanair.oif.interflights.external.api.RyanairService;
 import com.ryanair.oif.interflights.external.api.domain.Route;
+import com.ryanair.oif.interflights.services.FlightService;
 import com.ryanair.oif.interflights.util.RyanairCommons;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +19,7 @@ import java.util.List;
 public class FlightController {
 
     @Autowired
-    RyanairAPI ryanairAPI;
+    FlightService flightService;
 
     @RequestMapping("/interconnections")
     public List<Flight> getFlights(
@@ -26,9 +28,9 @@ public class FlightController {
             @RequestParam(value="departureDateTime") String departureDateTime,
             @RequestParam(value="arrivalDateTime") String arrivalDateTime){
 
-        List<Route> routes = ryanairAPI.getRoutes();
-
         List<Flight> flights = new ArrayList<>();
+
+        List<Route> routes = flightService.searchRoutesByDest("MAD");
 
         Flight flight = new Flight();
         List<Leg> legs = new ArrayList<>();
