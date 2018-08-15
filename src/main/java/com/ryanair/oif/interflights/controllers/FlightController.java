@@ -12,8 +12,12 @@ import java.util.List;
 @RestController
 public class FlightController {
 
+    private final FlightService flightService;
+
     @Autowired
-    FlightService flightService;
+    public FlightController(FlightService flightService) {
+        this.flightService = flightService;
+    }
 
     @RequestMapping("/interconnections")
     public List<Flight> getFlights(
@@ -22,6 +26,6 @@ public class FlightController {
             @RequestParam(value="departureDateTime") String departureDateTime,
             @RequestParam(value="arrivalDateTime") String arrivalDateTime){
 
-        return flightService.getDirectFlights(departureAirport, arrivalAirport);
+        return flightService.getFlights(departureAirport, arrivalAirport);
     }
 }

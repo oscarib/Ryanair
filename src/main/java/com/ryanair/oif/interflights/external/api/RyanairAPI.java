@@ -17,12 +17,18 @@ public class RyanairAPI {
     @Value("${ryanair.api.routesURL}")
     String routesEndpoint;
 
-    protected List<Route> getRoutes(){
+    @Value("${ryanair.api.schedulesURL}")
+    String schedulesEndpoint;
+
+    List<Route> getRoutes(){
         ResponseEntity<Route[]> responseEntity = restTemplate.getForEntity(routesEndpoint, Route[].class);
         Object[] routeObjects = responseEntity.getBody();
         if (routeObjects!=null) {
             return getRoutes(routeObjects);
-        } else return null;
+        } else {
+            return null;
+        }
+    }
 
     }
 

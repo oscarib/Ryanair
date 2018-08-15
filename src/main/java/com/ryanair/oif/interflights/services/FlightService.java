@@ -6,5 +6,5 @@ import java.util.List;
 
 public interface FlightService {
 
-    List<Flight> getDirectFlights(String departureAirport, String arrivalAirport);
+    List<Flight> getFlights(String departureAirport, String arrivalAirport);
 }

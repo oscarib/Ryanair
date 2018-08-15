@@ -3,7 +3,6 @@ package com.ryanair.oif.interflights.external.api;
 import com.ryanair.oif.interflights.external.api.domain.Route;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -11,8 +10,12 @@ import java.util.stream.Stream;
 @Service
 public class RyanairService {
 
+    private final RyanairAPI ryanairAPI;
+
     @Autowired
-    RyanairAPI ryanairAPI;
+    public RyanairService(RyanairAPI ryanairAPI) {
+        this.ryanairAPI = ryanairAPI;
+    }
 
     public List<Route> searchRoutesByDest(String IATACode){
         List<Route> routes = ryanairAPI.getRoutes();
@@ -20,16 +23,25 @@ public class RyanairService {
     }
 
     //This is supposed to be run in a java8 JVM only
-    public List<Route> searchRoutesByDest(List<Route> routes, String IATACode){
+    public List<Route> searchRoutesByDep(List<Route> routes, String IATACode){
         Stream<Route> routesCollection = routes.stream();
-        Stream<Route> filteredRoutesCollection = routesCollection.filter(item -> item.getAirportTo().equals(IATACode));
+        Stream<Route> filteredRoutesCollection;
+        filteredRoutesCollection = routesCollection.filter(route -> route.getAirportFrom().equals(IATACode));
         return filteredRoutesCollection.collect(Collectors.toList());
     }
 
     //This is supposed to be run in a java8 JVM only
-    public List<Route> searchRoutesByDep(List<Route> routes, String IATACode){
+    public List<Route> filterOutDepartureAirport(List<Route> routes, String IATACode){
         Stream<Route> routesCollection = routes.stream();
-        Stream<Route> filteredRoutesCollection = routesCollection.filter(item -> item.getAirportFrom().equals(IATACode));
+        Stream<Route> filteredRoutesCollection;
+        filteredRoutesCollection = routesCollection.filter(route -> !route.getAirportFrom().equals(IATACode));
+        return filteredRoutesCollection.collect(Collectors.toList());
+    }
+
+    //This is supposed to be run in a java8 JVM only
+    private List<Route> searchRoutesByDest(List<Route> routes, String IATACode){
+        Stream<Route> routesCollection = routes.stream();
+        Stream<Route> filteredRoutesCollection = routesCollection.filter(route -> route.getAirportTo().equals(IATACode));
         return filteredRoutesCollection.collect(Collectors.toList());
     }
 }
