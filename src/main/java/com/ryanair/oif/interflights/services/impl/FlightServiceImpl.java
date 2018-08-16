@@ -132,8 +132,10 @@ public class FlightServiceImpl implements FlightService {
             if (matches==0) {
                 flights2Remove.add(routeFlight);
             } else {
-                legFlight.setDepartureDateTime(departureTime);
-                legFlight.setArrivalDateTime(arrivalTime);
+                String departureDateTime = RyanairCommons.getDateISOAsTxt(year, month, day, departureTime);
+                String arrivalDateTime = RyanairCommons.getDateISOAsTxt(year, month, day, arrivalTime);
+                legFlight.setDepartureDateTime(departureDateTime);
+                legFlight.setArrivalDateTime(arrivalDateTime);
             }
         }
     }
