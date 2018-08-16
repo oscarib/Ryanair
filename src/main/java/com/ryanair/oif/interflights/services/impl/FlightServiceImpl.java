@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 @Service
 public class FlightServiceImpl implements FlightService {
 
-    Logger logger = LoggerFactory.getLogger(FlightServiceImpl.class);
+    private Logger logger = LoggerFactory.getLogger(FlightService.class);
 
     private final RyanairService ryanairService;
 
@@ -53,10 +53,10 @@ public class FlightServiceImpl implements FlightService {
         List<RouteFlight> flights2Remove = new ArrayList<>();
         for (RouteFlight routeFlight : routeFlights) {
 
-            for (Leg legFlight : routeFlight.getLegs()) {
+            for (Leg leg : routeFlight.getLegs()) {
 
-                String legDeparture = legFlight.getDepartureAirport();
-                String legArrival = legFlight.getArrivalAirport();
+                String legDeparture = leg.getDepartureAirport();
+                String legArrival = leg.getArrivalAirport();
 
                 List<DayFlights> daySchedules = getDayScheduledFlights(
                         day, month, year, flights2Remove, routeFlight, legDeparture, legArrival
@@ -68,8 +68,28 @@ public class FlightServiceImpl implements FlightService {
 
                 checkLegWithinScheduled(
                         day, month, year, departureDate, arrivalDate,
-                        flights2Remove, routeFlight, daySchedules, legFlight
+                        flights2Remove, routeFlight, daySchedules, leg
                 );
+            }
+
+            if (routeFlight.getLegs().size()>1 && !flights2Remove.contains(routeFlight)) {
+                Leg leg1 = routeFlight.getLegs().get(0);
+                Leg leg2 = routeFlight.getLegs().get(1);
+                Date leg2Departure = RyanairCommons.parse2Date(leg2.getDepartureDateTime());
+                Date leg1Arrival = RyanairCommons.parse2Date(leg1.getArrivalDateTime());
+                long diff = leg2Departure.getTime() - leg1Arrival.getTime();
+                long diffHours = diff / (60 * 60 * 1000);
+                if (diffHours<0){
+                    flights2Remove.add(routeFlight);
+                    logger.info("Route is a two legs flight, but second flight starts earlier than first flight arrival");
+                } else {
+                    logger.info("Route is a two legs flight. Time between first flight arrival " +
+                            "and second flight departure is higher than " + diffHours + "h");
+                    if (diffHours<2) {
+                        flights2Remove.add(routeFlight);
+                    }
+                }
+
             }
         }
 
@@ -86,7 +106,7 @@ public class FlightServiceImpl implements FlightService {
 
         //Get the month Schedules for the leg
         MonthFlights monthFlights = ryanairService.getMonthFlights(legDeparture, legArrival, year, month);
-        logger.info("Requesting schedules for route '"+legDeparture+"'-->'"+legArrival+"' " +
+        logger.info("Requesting schedules for flight '"+legDeparture+"'-->'"+legArrival+"' " +
                      "on year '"+year+"' and month '"+month+"'");
 
         if (monthFlights.getMonth()==null) {
