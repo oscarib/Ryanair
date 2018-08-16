@@ -7,7 +7,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,12 +37,7 @@ public class RyanairAPI {
         ResponseEntity<MonthFlights> responseEntity;
         try {
             responseEntity = restTemplate.getForEntity(finalEndpoint, MonthFlights.class);
-            Object schedulesObject = responseEntity.getBody();
-            if (schedulesObject!=null) {
-                return (MonthFlights) schedulesObject;
-            } else {
-                return null;
-            }
+            return responseEntity.getBody();
 
         } catch (HttpClientErrorException e) {
             //No flights found. Returning an empty response.

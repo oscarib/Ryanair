@@ -1,7 +1,7 @@
 package com.ryanair.oif.interflights.services.impl;
 
-import com.ryanair.oif.interflights.domain.RouteFlight;
 import com.ryanair.oif.interflights.domain.Leg;
+import com.ryanair.oif.interflights.domain.RouteFlight;
 import com.ryanair.oif.interflights.external.api.RyanairService;
 import com.ryanair.oif.interflights.external.api.domain.DayFlights;
 import com.ryanair.oif.interflights.external.api.domain.Flight;
@@ -34,60 +34,38 @@ public class FlightServiceImpl implements FlightService {
     public List<RouteFlight> getFlights(String departureAirport, String arrivalAirport,
                                         String departureDateTimeISO, String arrivalDateTimeISO){
 
-        List<RouteFlight> routeFlights = new ArrayList<>();
-
-        routeFlights.addAll(getDirectFlights(departureAirport, arrivalAirport));
-        routeFlights.addAll(getIndirectFlights(departureAirport));
-
         String day = RyanairCommons.getDay(departureDateTimeISO);
         String month = RyanairCommons.getMonth(departureDateTimeISO);
         String year = RyanairCommons.getYear(departureDateTimeISO);
         Date departureDate = RyanairCommons.parse2Date(departureDateTimeISO);
         Date arrivalDate = RyanairCommons.parse2Date(arrivalDateTimeISO);
 
+        //Getting all available routes
+        List<RouteFlight> routeFlights = new ArrayList<>();
+        routeFlights.addAll(getDirectRoutes(departureAirport, arrivalAirport));
+        routeFlights.addAll(getIndirectRoutes(departureAirport));
+
         //Checking schedule availability
         List<RouteFlight> flights2Remove = new ArrayList<>();
         for (RouteFlight routeFlight : routeFlights) {
 
-            //Get the Schedules for the routeFlights on the month
             for (Leg legFlight : routeFlight.getLegs()) {
 
                 String legDeparture = legFlight.getDepartureAirport();
                 String legArrival = legFlight.getArrivalAirport();
 
-                MonthFlights monthFlights = ryanairService.getMonthFlights(legDeparture, legArrival, year, month);
-                if (monthFlights.getMonth()==null) {
-                    //No Flights found for provided month
-                    flights2Remove.add(routeFlight);
+                List<DayFlights> daySchedules = getDayScheduledFlights(
+                        day, month, year, flights2Remove, routeFlight, legDeparture, legArrival
+                );
+
+                if (daySchedules == null){
                     continue;
                 }
 
-                //Get the Schedules for the routeFlights on the day
-                List<DayFlights> monthSchedules = monthFlights.getDays();
-                List<DayFlights> daySchedules = filterSchedulesByDay(day, monthSchedules);
-                if (daySchedules.size()==0){
-                    //No Flights found for provided day
-                    flights2Remove.add(routeFlight);
-                    continue;
-                }
-
-                //Checking flight dates are not earlier than requested departureDate nor later than requested arrivalDate
-                for (DayFlights dayFlights : daySchedules) {
-                    List<Flight> flights = dayFlights.getFlights();
-                    int matches = 0;
-                    for (Flight flight : flights) {
-                        Date departureFlightDate = RyanairCommons.parse2Date(year, month, day, flight.getDepartureTime());
-                        Date arrivalFlightDate = RyanairCommons.parse2Date(year, month, day, flight.getArrivalTime());
-                        boolean flightStartsAfterRequested = departureDate.compareTo(departureFlightDate)<=0;
-                        boolean flightArrivesBeforeRequested = arrivalDate.compareTo(arrivalFlightDate)>=0;
-                        if (flightStartsAfterRequested && flightArrivesBeforeRequested) {
-                            matches++;
-                        }
-                    }
-                    if (matches==0) {
-                        flights2Remove.add(routeFlight);
-                    }
-                }
+                checkLegWithinScheduled(
+                        day, month, year, departureDate, arrivalDate,
+                        flights2Remove, routeFlight, daySchedules, legFlight
+                );
             }
         }
 
@@ -98,6 +76,62 @@ public class FlightServiceImpl implements FlightService {
         return routeFlights;
     }
 
+    private List<DayFlights> getDayScheduledFlights(String day, String month, String year,
+                                                    List<RouteFlight> flights2Remove, RouteFlight routeFlight,
+                                                    String legDeparture, String legArrival) {
+
+        //Get the month Schedules for the leg
+        MonthFlights monthFlights = ryanairService.getMonthFlights(legDeparture, legArrival, year, month);
+        if (monthFlights.getMonth()==null) {
+            //No Flights found for the leg in the whole month
+            flights2Remove.add(routeFlight);
+            return null;
+        }
+
+        //Get the day Schedules for the leg
+        List<DayFlights> monthSchedules = monthFlights.getDays();
+        List<DayFlights> daySchedules = filterSchedulesByDay(day, monthSchedules);
+        if (daySchedules.size()==0){
+            //No Flights found for the leg in the whole day
+            flights2Remove.add(routeFlight);
+            return null;
+        }
+
+        return daySchedules;
+    }
+
+    private void checkLegWithinScheduled(String day, String month, String year, Date departureDate,
+                                         Date arrivalDate, List<RouteFlight> flights2Remove,
+                                         RouteFlight routeFlight, List<DayFlights> daySchedules,
+                                         Leg legFlight) {
+
+        int matches = 0;
+
+        for (DayFlights dayFlights : daySchedules) {
+            List<Flight> flights = dayFlights.getFlights();
+            String departureTime = "";
+            String arrivalTime = "";
+            for (Flight flight : flights) {
+                departureTime = flight.getDepartureTime();
+                arrivalTime = flight.getArrivalTime();
+                Date departureFlightDate = RyanairCommons.parse2Date(year, month, day, departureTime);
+                Date arrivalFlightDate = RyanairCommons.parse2Date(year, month, day, arrivalTime);
+                boolean flightStartsAfterRequested = departureDate.compareTo(departureFlightDate)<=0;
+                boolean flightArrivesBeforeRequested = arrivalDate.compareTo(arrivalFlightDate)>=0;
+                if (flightStartsAfterRequested && flightArrivesBeforeRequested) {
+                    matches++;
+                }
+            }
+            if (matches==0) {
+                flights2Remove.add(routeFlight);
+            } else {
+                legFlight.setDepartureDateTime(departureTime);
+                legFlight.setArrivalDateTime(arrivalTime);
+            }
+        }
+    }
+
+    //This is supposed to be run in a java8 JDK only
     private List<DayFlights> filterSchedulesByDay(String day, List<DayFlights> monthFlights) {
         List<DayFlights> filteredFlights;Stream<DayFlights> monthFlightsCollection = monthFlights.stream();
         Stream<DayFlights> filteredDayFlights;
@@ -106,7 +140,7 @@ public class FlightServiceImpl implements FlightService {
         return filteredFlights;
     }
 
-    private List<RouteFlight> getDirectFlights(String departureAirport, String arrivalAirport){
+    private List<RouteFlight> getDirectRoutes(String departureAirport, String arrivalAirport){
 
         routes2Dest = ryanairService.searchRoutesByDest(arrivalAirport);
         List<Route> directRoutes = ryanairService.searchRoutesByDep(routes2Dest, departureAirport);
@@ -116,14 +150,14 @@ public class FlightServiceImpl implements FlightService {
         for (Route directRoute : directRoutes) {
             String airportFrom = directRoute.getAirportFrom();
             String airportTo = directRoute.getAirportTo();
-            RouteFlight directRouteFlight = getDirectFlight(airportFrom, airportTo);
+            RouteFlight directRouteFlight = getDirectRoute(airportFrom, airportTo);
             directRouteFlights.add(directRouteFlight);
         }
 
         return directRouteFlights;
     }
 
-    private List<RouteFlight> getIndirectFlights(String departureAirport){
+    private List<RouteFlight> getIndirectRoutes(String departureAirport){
 
         List<RouteFlight> indirectRouteFlights = new ArrayList<>();
 
@@ -141,7 +175,7 @@ public class FlightServiceImpl implements FlightService {
         return indirectRouteFlights;
     }
 
-    private RouteFlight getDirectFlight(String departureAirport, String arrivalAirport){
+    private RouteFlight getDirectRoute(String departureAirport, String arrivalAirport){
 
         RouteFlight routeFlight = new RouteFlight();
         List<Leg> legs = new ArrayList<>();

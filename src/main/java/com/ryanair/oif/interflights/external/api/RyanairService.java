@@ -27,7 +27,7 @@ public class RyanairService {
         return searchRoutesByDest(routes, IATACode);
     }
 
-    //This is supposed to be run in a java8 JVM only
+    //This is supposed to be run in a java8 JDK only
     public List<Route> searchRoutesByDep(List<Route> routes, String IATACode){
         Stream<Route> routesCollection = routes.stream();
         Stream<Route> filteredRoutesCollection;
@@ -35,7 +35,7 @@ public class RyanairService {
         return filteredRoutesCollection.collect(Collectors.toList());
     }
 
-    //This is supposed to be run in a java8 JVM only
+    //This is supposed to be run in a java8 JDK only
     public List<Route> filterOutDepartureAirport(List<Route> routes, String IATACode){
         Stream<Route> routesCollection = routes.stream();
         Stream<Route> filteredRoutesCollection;
@@ -43,7 +43,7 @@ public class RyanairService {
         return filteredRoutesCollection.collect(Collectors.toList());
     }
 
-    //This is supposed to be run in a java8 JVM only
+    //This is supposed to be run in a java8 JDK only
     private List<Route> searchRoutesByDest(List<Route> routes, String IATACode){
         Stream<Route> routesCollection = routes.stream();
         Stream<Route> filteredRoutesCollection = routesCollection.filter(route -> {
