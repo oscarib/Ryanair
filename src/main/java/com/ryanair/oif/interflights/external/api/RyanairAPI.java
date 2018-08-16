@@ -1,9 +1,11 @@
 package com.ryanair.oif.interflights.external.api;
 
+import com.ryanair.oif.interflights.external.api.domain.MonthFlights;
 import com.ryanair.oif.interflights.external.api.domain.Route;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
@@ -30,6 +32,23 @@ public class RyanairAPI {
         }
     }
 
+    MonthFlights getMonthSchedules(String departureAirport, String arrivalAirport, String year, String month){
+        String finalEndpoint = schedulesEndpoint + departureAirport + "/" + arrivalAirport;
+        finalEndpoint += "/years/" + year + "/months/" + month;
+        ResponseEntity<MonthFlights> responseEntity;
+        try {
+            responseEntity = restTemplate.getForEntity(finalEndpoint, MonthFlights.class);
+            Object schedulesObject = responseEntity.getBody();
+            if (schedulesObject!=null) {
+                return (MonthFlights) schedulesObject;
+            } else {
+                return null;
+            }
+
+        } catch (HttpClientErrorException e) {
+            //No flights found. Returning an empty response.
+            return new MonthFlights();
+        }
     }
 
     private List<Route> getRoutes(Object[] routeObjects) {

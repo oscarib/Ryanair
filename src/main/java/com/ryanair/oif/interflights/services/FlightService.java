@@ -1,10 +1,11 @@
 package com.ryanair.oif.interflights.services;
 
-import com.ryanair.oif.interflights.domain.Flight;
+import com.ryanair.oif.interflights.domain.RouteFlight;
 
 import java.util.List;
 
 public interface FlightService {
 
-    List<Flight> getFlights(String departureAirport, String arrivalAirport);
+    List<RouteFlight> getFlights(String departureAirport, String arrivalAirport,
+                                 String departureDateTime, String arrivalDateTime);
 }

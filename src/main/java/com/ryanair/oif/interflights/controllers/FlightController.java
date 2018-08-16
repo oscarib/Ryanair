@@ -1,6 +1,6 @@
 package com.ryanair.oif.interflights.controllers;
 
-import com.ryanair.oif.interflights.domain.Flight;
+import com.ryanair.oif.interflights.domain.RouteFlight;
 import com.ryanair.oif.interflights.services.FlightService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,12 +20,12 @@ public class FlightController {
     }
 
     @RequestMapping("/interconnections")
-    public List<Flight> getFlights(
+    public List<RouteFlight> getFlights(
             @RequestParam(value="departure") String departureAirport,
             @RequestParam(value="arrival") String arrivalAirport,
             @RequestParam(value="departureDateTime") String departureDateTime,
             @RequestParam(value="arrivalDateTime") String arrivalDateTime){
 
-        return flightService.getFlights(departureAirport, arrivalAirport);
+        return flightService.getFlights(departureAirport, arrivalAirport, departureDateTime, arrivalDateTime);
     }
 }

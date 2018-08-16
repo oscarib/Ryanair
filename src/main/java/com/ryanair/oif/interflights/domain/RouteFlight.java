@@ -3,7 +3,7 @@ package com.ryanair.oif.interflights.domain;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Flight {
+public class RouteFlight {
 
     private int stops;
     private List<Leg> legs;

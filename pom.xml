@@ -9,7 +9,7 @@
 	<packaging>war</packaging>
 
 	<name>interflights</name>
-	<description>Interconnection flight project for the Ryanair Apply</description>
+	<description>Interconnection routeFlight project for the Ryanair Apply</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
