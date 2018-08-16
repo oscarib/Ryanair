@@ -9,6 +9,8 @@ import com.ryanair.oif.interflights.external.api.domain.MonthFlights;
 import com.ryanair.oif.interflights.external.api.domain.Route;
 import com.ryanair.oif.interflights.services.FlightService;
 import com.ryanair.oif.interflights.util.RyanairCommons;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,8 @@ import java.util.stream.Stream;
 
 @Service
 public class FlightServiceImpl implements FlightService {
+
+    Logger logger = LoggerFactory.getLogger(FlightServiceImpl.class);
 
     private final RyanairService ryanairService;
 
@@ -82,6 +86,9 @@ public class FlightServiceImpl implements FlightService {
 
         //Get the month Schedules for the leg
         MonthFlights monthFlights = ryanairService.getMonthFlights(legDeparture, legArrival, year, month);
+        logger.info("Requesting schedules for route '"+legDeparture+"'-->'"+legArrival+"' " +
+                     "on year '"+year+"' and month '"+month+"'");
+
         if (monthFlights.getMonth()==null) {
             //No Flights found for the leg in the whole month
             flights2Remove.add(routeFlight);
