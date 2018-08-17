@@ -1,14 +1,14 @@
-package com.ryanair.oif.interflights.services.impl;
+package com.ryanair.oif.routes.services.impl;
 
-import com.ryanair.oif.interflights.domain.Leg;
-import com.ryanair.oif.interflights.domain.RouteFlight;
-import com.ryanair.oif.interflights.external.api.RyanairService;
-import com.ryanair.oif.interflights.external.api.domain.DayFlights;
-import com.ryanair.oif.interflights.external.api.domain.Flight;
-import com.ryanair.oif.interflights.external.api.domain.MonthFlights;
-import com.ryanair.oif.interflights.external.api.domain.Route;
-import com.ryanair.oif.interflights.services.FlightService;
-import com.ryanair.oif.interflights.util.RyanairCommons;
+import com.ryanair.oif.routes.domain.Leg;
+import com.ryanair.oif.routes.domain.RouteFlight;
+import com.ryanair.oif.routes.external.api.RyanairService;
+import com.ryanair.oif.routes.external.api.domain.DayFlights;
+import com.ryanair.oif.routes.external.api.domain.Flight;
+import com.ryanair.oif.routes.external.api.domain.MonthFlights;
+import com.ryanair.oif.routes.external.api.domain.Route;
+import com.ryanair.oif.routes.services.FlightService;
+import com.ryanair.oif.routes.util.RyanairCommons;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,7 +55,8 @@ public class FlightServiceImpl implements FlightService {
             checkRouteWithinTimeFrame(
                     day, month, year, requestedDepartureDate, requestedArrivalDate, flights2Remove, routeFlight
             );
-            checkRouteInterconnections(flights2Remove, routeFlight);
+
+            checkConnectionWithinTimeFrame(flights2Remove, routeFlight);
 
         }
 
@@ -65,12 +66,7 @@ public class FlightServiceImpl implements FlightService {
     }
 
     //Check if indirect flights gives at least 2h timelapse between first flight arrival and second flight departure
-    private void checkRouteInterconnections(List<RouteFlight> flights2Remove, RouteFlight routeFlight) {
-
-        //TODO: Take into consideration more than one valid flight per schedule.
-        //      A schedule could contain two flights, from same dep an arr airports,
-        //      at different times. Theoretically, they both could be within requested time frame,
-        //      Hence, those flights should be duplicated as valid alternatives separately
+    private void checkConnectionWithinTimeFrame(List<RouteFlight> flights2Remove, RouteFlight routeFlight) {
 
         if (routeFlight.getLegs().size()>1 && !flights2Remove.contains(routeFlight)) {
 
@@ -85,19 +81,32 @@ public class FlightServiceImpl implements FlightService {
                 return;
             }
 
-            long diff = leg2Departure.getTime() - leg1Arrival.getTime();
-            long diffHours = diff / (60 * 60 * 1000);
-            if (diffHours<0){
+            long diffInHours = getDiffInHours(leg1, leg2);
+            if (diffInHours <0){
                 flights2Remove.add(routeFlight);
                 logger.debug("Route is a two legs flight, but second flight starts earlier than first flight arrival");
             } else {
                 logger.debug("Route is a two legs flight. Time between first flight arrival " +
-                             "and second flight departure is higher than " + diffHours + "h");
-                if (diffHours<2) {
+                             "and second flight departure is higher than " + diffInHours + "h");
+                if (diffInHours<2) {
                     flights2Remove.add(routeFlight);
                 }
             }
         }
+    }
+
+    private long getDiffInHours(Leg firstLeg, Leg secondLeg){
+        String departureDateTime = secondLeg.getDepartureDateTime();
+        String arrivalDateTime = firstLeg.getArrivalDateTime();
+        Date departureDate = RyanairCommons.parse2Date(departureDateTime);
+        Date arrivalDate = RyanairCommons.parse2Date(arrivalDateTime);
+        if (departureDate==null || arrivalDate==null) {
+            return -1;
+        }
+        long departureInTime = departureDate.getTime();
+        long arrivalInTime = arrivalDate.getTime();
+        long diff = departureInTime - arrivalInTime;
+        return diff / (60 * 60 * 1000);
     }
 
     //Checks that flights departure and arrival times are within requested frames
@@ -159,31 +168,57 @@ public class FlightServiceImpl implements FlightService {
                                          RouteFlight routeFlight, List<DayFlights> daySchedules,
                                          Leg legFlight) {
 
-        int matches = 0;
+        //TODO: Take into consideration more than one valid flight per schedule.
+        //      A schedule could contain two flights, from same dep an arr airports,
+        //      at different times. Theoretically, they both could be within requested time frame,
+        //      Hence, those flights should be duplicated as valid alternatives separately
 
-        for (DayFlights dayFlights : daySchedules) {
+        boolean notFound = true;
+
+        for (int i1 = 0; i1 < daySchedules.size() && notFound; i1++) {
+            DayFlights dayFlights = daySchedules.get(i1);
             List<Flight> flights = dayFlights.getFlights();
-            String departureTime = "";
-            String arrivalTime = "";
-            for (Flight flight : flights) {
+
+            boolean isSecondLeg = routeFlight.getLegs().indexOf(legFlight) > 0;
+            Leg firstLeg = routeFlight.getLegs().get(0);
+
+            String departureTime;
+            String arrivalTime;
+            for (int i2 = 0; i2 < flights.size() && notFound; i2++) {
+
+                Flight flight = flights.get(i2);
+
+                //Get dates for the leg flight
                 departureTime = flight.getDepartureTime();
                 arrivalTime = flight.getArrivalTime();
                 Date departureFlightDate = RyanairCommons.parse2Date(year, month, day, departureTime);
                 Date arrivalFlightDate = RyanairCommons.parse2Date(year, month, day, arrivalTime);
-                boolean flightStartsAfterRequested = requestedDepartureDate.compareTo(departureFlightDate)<0;
-                boolean flightArrivesBeforeRequested = requestedArrivalDate.compareTo(arrivalFlightDate)>0;
+
+                //Check whether leg flight is within requested time frame or not
+                boolean flightStartsAfterRequested = requestedDepartureDate.compareTo(departureFlightDate) < 0;
+                boolean flightArrivesBeforeRequested = requestedArrivalDate.compareTo(arrivalFlightDate) > 0;
+
                 if (flightStartsAfterRequested && flightArrivesBeforeRequested) {
-                    matches++;
+                    String departureDateTime = RyanairCommons.getDateISOAsTxt(year, month, day, departureTime);
+                    String arrivalDateTime = RyanairCommons.getDateISOAsTxt(year, month, day, arrivalTime);
+
+                    //Before assuming leg flight is wihtin time frame, we need Leg Object for getDiffInHours
+                    Leg temporarySecondLeg = new Leg();
+                    temporarySecondLeg.setDepartureDateTime(departureDateTime);
+                    temporarySecondLeg.setArrivalDateTime(arrivalDateTime);
+
+                    if (!isSecondLeg || getDiffInHours(firstLeg, temporarySecondLeg) > 2) {
+                        legFlight.setDepartureDateTime(departureDateTime);
+                        legFlight.setArrivalDateTime(arrivalDateTime);
+                        notFound = false;
+                    }
                 }
             }
-            if (matches==0) {
-                flights2Remove.add(routeFlight);
-            } else {
-                String departureDateTime = RyanairCommons.getDateISOAsTxt(year, month, day, departureTime);
-                String arrivalDateTime = RyanairCommons.getDateISOAsTxt(year, month, day, arrivalTime);
-                legFlight.setDepartureDateTime(departureDateTime);
-                legFlight.setArrivalDateTime(arrivalDateTime);
-            }
+        }
+
+        if (notFound) {
+            //No schedules found. Remove route from list
+            flights2Remove.add(routeFlight);
         }
     }
 

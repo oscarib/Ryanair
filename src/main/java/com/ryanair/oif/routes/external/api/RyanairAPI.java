@@ -1,7 +1,7 @@
-package com.ryanair.oif.interflights.external.api;
+package com.ryanair.oif.routes.external.api;
 
-import com.ryanair.oif.interflights.external.api.domain.MonthFlights;
-import com.ryanair.oif.interflights.external.api.domain.Route;
+import com.ryanair.oif.routes.external.api.domain.MonthFlights;
+import com.ryanair.oif.routes.external.api.domain.Route;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;

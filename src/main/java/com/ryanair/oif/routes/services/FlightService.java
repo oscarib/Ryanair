@@ -1,6 +1,6 @@
-package com.ryanair.oif.interflights.services;
+package com.ryanair.oif.routes.services;
 
-import com.ryanair.oif.interflights.domain.RouteFlight;
+import com.ryanair.oif.routes.domain.RouteFlight;
 
 import java.util.List;
 

@@ -1,12 +1,12 @@
-package com.ryanair.oif.interflights;
+package com.ryanair.oif.routes;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class InterflightsApplication {
+public class RoutesApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(InterflightsApplication.class, args);
+		SpringApplication.run(RoutesApplication.class, args);
 	}
 }

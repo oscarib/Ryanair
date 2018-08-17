@@ -1,4 +1,4 @@
-package com.ryanair.oif.interflights.external.api.domain;
+package com.ryanair.oif.routes.external.api.domain;
 
 public class Flight {
 

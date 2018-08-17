@@ -1,4 +1,4 @@
-package com.ryanair.oif.interflights.util;
+package com.ryanair.oif.routes.util;
 
 import java.text.DateFormat;
 import java.text.ParseException;
