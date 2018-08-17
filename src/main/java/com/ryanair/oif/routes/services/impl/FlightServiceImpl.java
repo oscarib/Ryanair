@@ -98,8 +98,13 @@ public class FlightServiceImpl implements FlightService {
     private long getDiffInHours(Leg firstLeg, Leg secondLeg){
         String departureDateTime = secondLeg.getDepartureDateTime();
         String arrivalDateTime = firstLeg.getArrivalDateTime();
-        long departureInTime = RyanairCommons.parse2Date(departureDateTime).getTime();
-        long arrivalInTime = RyanairCommons.parse2Date(arrivalDateTime).getTime();
+        Date departureDate = RyanairCommons.parse2Date(departureDateTime);
+        Date arrivalDate = RyanairCommons.parse2Date(arrivalDateTime);
+        if (departureDate==null || arrivalDate==null) {
+            return -1;
+        }
+        long departureInTime = departureDate.getTime();
+        long arrivalInTime = arrivalDate.getTime();
         long diff = departureInTime - arrivalInTime;
         return diff / (60 * 60 * 1000);
     }
@@ -177,8 +182,8 @@ public class FlightServiceImpl implements FlightService {
             boolean isSecondLeg = routeFlight.getLegs().indexOf(legFlight) > 0;
             Leg firstLeg = routeFlight.getLegs().get(0);
 
-            String departureTime = "";
-            String arrivalTime = "";
+            String departureTime;
+            String arrivalTime;
             for (int i2 = 0; i2 < flights.size() && notFound; i2++) {
 
                 Flight flight = flights.get(i2);
