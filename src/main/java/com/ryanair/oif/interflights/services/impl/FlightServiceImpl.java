@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -44,17 +43,67 @@ public class FlightServiceImpl implements FlightService {
         Date departureDate = RyanairCommons.parse2Date(departureDateTimeISO);
         Date arrivalDate = RyanairCommons.parse2Date(arrivalDateTimeISO);
 
-        //Getting all available routes
+        //Getting all direct and indirect routes
         List<RouteFlight> routeFlights = new ArrayList<>();
         routeFlights.addAll(getDirectRoutes(departureAirport, arrivalAirport));
         routeFlights.addAll(getIndirectRoutes(departureAirport));
 
-        //Checking schedule availability
         List<RouteFlight> flights2Remove = new ArrayList<>();
         for (RouteFlight routeFlight : routeFlights) {
 
-            for (Leg leg : routeFlight.getLegs()) {
+            checkRouteWithinTimeFrame(day, month, year, departureDate, arrivalDate, flights2Remove, routeFlight);
+            checkRouteInterconnections(flights2Remove, routeFlight);
 
+        }
+
+        routeFlights.removeAll(flights2Remove);
+
+        return routeFlights;
+    }
+
+    //Check if indirect flights gives at least 2h timelapse between first flight arrival and second flight departure
+    private void checkRouteInterconnections(List<RouteFlight> flights2Remove, RouteFlight routeFlight) {
+
+        //TODO: Take into consideration more than one valid flight per schedule.
+        //      A schedule could contain two flights, from same dep an arr airports,
+        //      at different times. Theoretically, they both could be within requested time frame,
+        //      Hence, those flights should be duplicated as valid alternatives separately
+
+        if (routeFlight.getLegs().size()>1 && !flights2Remove.contains(routeFlight)) {
+
+            Leg leg1 = routeFlight.getLegs().get(0);
+            Leg leg2 = routeFlight.getLegs().get(1);
+            Date leg2Departure = RyanairCommons.parse2Date(leg2.getDepartureDateTime());
+            Date leg1Arrival = RyanairCommons.parse2Date(leg1.getArrivalDateTime());
+
+            if (leg2Departure==null || leg1Arrival==null) {
+                flights2Remove.add(routeFlight);
+                logger.info("Route is a two legs flight, but there were somehow of a problem trying to get times");
+                return;
+            }
+
+            long diff = leg2Departure.getTime() - leg1Arrival.getTime();
+            long diffHours = diff / (60 * 60 * 1000);
+            if (diffHours<0){
+                flights2Remove.add(routeFlight);
+                logger.info("Route is a two legs flight, but second flight starts earlier than first flight arrival");
+            } else {
+                logger.info("Route is a two legs flight. Time between first flight arrival " +
+                        "and second flight departure is higher than " + diffHours + "h");
+                if (diffHours<2) {
+                    flights2Remove.add(routeFlight);
+                }
+            }
+        }
+    }
+
+    //Checks that flights departure and arrival times are within requested frames
+    private void checkRouteWithinTimeFrame(String day, String month, String year, Date departureDate, Date arrivalDate,
+                                           List<RouteFlight> flights2Remove, RouteFlight routeFlight) {
+
+        for (Leg leg : routeFlight.getLegs()) {
+
+            if (!flights2Remove.contains(routeFlight)) {
                 String legDeparture = leg.getDepartureAirport();
                 String legArrival = leg.getArrivalAirport();
 
@@ -66,38 +115,12 @@ public class FlightServiceImpl implements FlightService {
                     continue;
                 }
 
-                checkLegWithinScheduled(
+                checkLegWithinTimeFrame(
                         day, month, year, departureDate, arrivalDate,
                         flights2Remove, routeFlight, daySchedules, leg
                 );
             }
-
-            if (routeFlight.getLegs().size()>1 && !flights2Remove.contains(routeFlight)) {
-                Leg leg1 = routeFlight.getLegs().get(0);
-                Leg leg2 = routeFlight.getLegs().get(1);
-                Date leg2Departure = RyanairCommons.parse2Date(leg2.getDepartureDateTime());
-                Date leg1Arrival = RyanairCommons.parse2Date(leg1.getArrivalDateTime());
-                long diff = leg2Departure.getTime() - leg1Arrival.getTime();
-                long diffHours = diff / (60 * 60 * 1000);
-                if (diffHours<0){
-                    flights2Remove.add(routeFlight);
-                    logger.info("Route is a two legs flight, but second flight starts earlier than first flight arrival");
-                } else {
-                    logger.info("Route is a two legs flight. Time between first flight arrival " +
-                            "and second flight departure is higher than " + diffHours + "h");
-                    if (diffHours<2) {
-                        flights2Remove.add(routeFlight);
-                    }
-                }
-
-            }
         }
-
-        routeFlights.removeAll(flights2Remove);
-
-        //TODO: Check out interconnection time frames
-
-        return routeFlights;
     }
 
     private List<DayFlights> getDayScheduledFlights(String day, String month, String year,
@@ -127,7 +150,7 @@ public class FlightServiceImpl implements FlightService {
         return daySchedules;
     }
 
-    private void checkLegWithinScheduled(String day, String month, String year, Date departureDate,
+    private void checkLegWithinTimeFrame(String day, String month, String year, Date departureDate,
                                          Date arrivalDate, List<RouteFlight> flights2Remove,
                                          RouteFlight routeFlight, List<DayFlights> daySchedules,
                                          Leg legFlight) {
