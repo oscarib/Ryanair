@@ -1,4 +1,4 @@
-package com.ryanair.oif.interflights.domain;
+package com.ryanair.oif.routes.domain;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.ryanair.oif.interflights.domain;
+package com.ryanair.oif.routes.domain;
 
 public class Leg {
 

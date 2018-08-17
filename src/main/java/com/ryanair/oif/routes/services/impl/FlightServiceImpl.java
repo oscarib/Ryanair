@@ -1,14 +1,14 @@
-package com.ryanair.oif.interflights.services.impl;
+package com.ryanair.oif.routes.services.impl;
 
-import com.ryanair.oif.interflights.domain.Leg;
-import com.ryanair.oif.interflights.domain.RouteFlight;
-import com.ryanair.oif.interflights.external.api.RyanairService;
-import com.ryanair.oif.interflights.external.api.domain.DayFlights;
-import com.ryanair.oif.interflights.external.api.domain.Flight;
-import com.ryanair.oif.interflights.external.api.domain.MonthFlights;
-import com.ryanair.oif.interflights.external.api.domain.Route;
-import com.ryanair.oif.interflights.services.FlightService;
-import com.ryanair.oif.interflights.util.RyanairCommons;
+import com.ryanair.oif.routes.domain.Leg;
+import com.ryanair.oif.routes.domain.RouteFlight;
+import com.ryanair.oif.routes.external.api.RyanairService;
+import com.ryanair.oif.routes.external.api.domain.DayFlights;
+import com.ryanair.oif.routes.external.api.domain.Flight;
+import com.ryanair.oif.routes.external.api.domain.MonthFlights;
+import com.ryanair.oif.routes.external.api.domain.Route;
+import com.ryanair.oif.routes.services.FlightService;
+import com.ryanair.oif.routes.util.RyanairCommons;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
