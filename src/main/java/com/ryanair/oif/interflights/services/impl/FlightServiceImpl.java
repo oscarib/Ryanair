@@ -170,8 +170,8 @@ public class FlightServiceImpl implements FlightService {
                 arrivalTime = flight.getArrivalTime();
                 Date departureFlightDate = RyanairCommons.parse2Date(year, month, day, departureTime);
                 Date arrivalFlightDate = RyanairCommons.parse2Date(year, month, day, arrivalTime);
-                boolean flightStartsAfterRequested = requestedDepartureDate.compareTo(departureFlightDate)<=0;
-                boolean flightArrivesBeforeRequested = requestedArrivalDate.compareTo(arrivalFlightDate)>=0;
+                boolean flightStartsAfterRequested = requestedDepartureDate.compareTo(departureFlightDate)<0;
+                boolean flightArrivesBeforeRequested = requestedArrivalDate.compareTo(arrivalFlightDate)>0;
                 if (flightStartsAfterRequested && flightArrivesBeforeRequested) {
                     matches++;
                 }
