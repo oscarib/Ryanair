@@ -81,7 +81,7 @@ public class FlightServiceImpl implements FlightService {
 
             if (leg2Departure==null || leg1Arrival==null) {
                 flights2Remove.add(routeFlight);
-                logger.info("Route is a two legs flight, but there were somehow of a problem trying to get times");
+                logger.debug("Route is a two legs flight, but there were somehow of a problem trying to get times");
                 return;
             }
 
@@ -89,10 +89,10 @@ public class FlightServiceImpl implements FlightService {
             long diffHours = diff / (60 * 60 * 1000);
             if (diffHours<0){
                 flights2Remove.add(routeFlight);
-                logger.info("Route is a two legs flight, but second flight starts earlier than first flight arrival");
+                logger.debug("Route is a two legs flight, but second flight starts earlier than first flight arrival");
             } else {
-                logger.info("Route is a two legs flight. Time between first flight arrival " +
-                        "and second flight departure is higher than " + diffHours + "h");
+                logger.debug("Route is a two legs flight. Time between first flight arrival " +
+                             "and second flight departure is higher than " + diffHours + "h");
                 if (diffHours<2) {
                     flights2Remove.add(routeFlight);
                 }
@@ -133,7 +133,7 @@ public class FlightServiceImpl implements FlightService {
 
         //Get the month Schedules for the leg
         MonthFlights monthFlights = ryanairService.getMonthFlights(legDeparture, legArrival, year, month);
-        logger.info("Requesting schedules for flight '"+legDeparture+"'-->'"+legArrival+"' " +
+        logger.debug("Requesting schedules for flight '"+legDeparture+"'-->'"+legArrival+"' " +
                      "on year '"+year+"' and month '"+month+"'");
 
         if (monthFlights.getMonth()==null) {
