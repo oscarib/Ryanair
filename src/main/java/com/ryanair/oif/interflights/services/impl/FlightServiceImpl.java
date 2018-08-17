@@ -40,18 +40,21 @@ public class FlightServiceImpl implements FlightService {
         String day = RyanairCommons.getDay(departureDateTimeISO);
         String month = RyanairCommons.getMonth(departureDateTimeISO);
         String year = RyanairCommons.getYear(departureDateTimeISO);
-        Date departureDate = RyanairCommons.parse2Date(departureDateTimeISO);
-        Date arrivalDate = RyanairCommons.parse2Date(arrivalDateTimeISO);
+        Date requestedDepartureDate = RyanairCommons.parse2Date(departureDateTimeISO);
+        Date requestedArrivalDate = RyanairCommons.parse2Date(arrivalDateTimeISO);
 
         //Getting all direct and indirect routes
         List<RouteFlight> routeFlights = new ArrayList<>();
         routeFlights.addAll(getDirectRoutes(departureAirport, arrivalAirport));
         routeFlights.addAll(getIndirectRoutes(departureAirport));
 
+        //Routes validation
         List<RouteFlight> flights2Remove = new ArrayList<>();
         for (RouteFlight routeFlight : routeFlights) {
 
-            checkRouteWithinTimeFrame(day, month, year, departureDate, arrivalDate, flights2Remove, routeFlight);
+            checkRouteWithinTimeFrame(
+                    day, month, year, requestedDepartureDate, requestedArrivalDate, flights2Remove, routeFlight
+            );
             checkRouteInterconnections(flights2Remove, routeFlight);
 
         }
@@ -98,8 +101,9 @@ public class FlightServiceImpl implements FlightService {
     }
 
     //Checks that flights departure and arrival times are within requested frames
-    private void checkRouteWithinTimeFrame(String day, String month, String year, Date departureDate, Date arrivalDate,
-                                           List<RouteFlight> flights2Remove, RouteFlight routeFlight) {
+    private void checkRouteWithinTimeFrame(String day, String month, String year, Date requestedDepartureDate,
+                                           Date requestedArrivalDate, List<RouteFlight> flights2Remove,
+                                           RouteFlight routeFlight) {
 
         for (Leg leg : routeFlight.getLegs()) {
 
@@ -116,7 +120,7 @@ public class FlightServiceImpl implements FlightService {
                 }
 
                 checkLegWithinTimeFrame(
-                        day, month, year, departureDate, arrivalDate,
+                        day, month, year, requestedDepartureDate, requestedArrivalDate,
                         flights2Remove, routeFlight, daySchedules, leg
                 );
             }
@@ -150,8 +154,8 @@ public class FlightServiceImpl implements FlightService {
         return daySchedules;
     }
 
-    private void checkLegWithinTimeFrame(String day, String month, String year, Date departureDate,
-                                         Date arrivalDate, List<RouteFlight> flights2Remove,
+    private void checkLegWithinTimeFrame(String day, String month, String year, Date requestedDepartureDate,
+                                         Date requestedArrivalDate, List<RouteFlight> flights2Remove,
                                          RouteFlight routeFlight, List<DayFlights> daySchedules,
                                          Leg legFlight) {
 
@@ -166,8 +170,8 @@ public class FlightServiceImpl implements FlightService {
                 arrivalTime = flight.getArrivalTime();
                 Date departureFlightDate = RyanairCommons.parse2Date(year, month, day, departureTime);
                 Date arrivalFlightDate = RyanairCommons.parse2Date(year, month, day, arrivalTime);
-                boolean flightStartsAfterRequested = departureDate.compareTo(departureFlightDate)<=0;
-                boolean flightArrivesBeforeRequested = arrivalDate.compareTo(arrivalFlightDate)>=0;
+                boolean flightStartsAfterRequested = requestedDepartureDate.compareTo(departureFlightDate)<=0;
+                boolean flightArrivesBeforeRequested = requestedArrivalDate.compareTo(arrivalFlightDate)>=0;
                 if (flightStartsAfterRequested && flightArrivesBeforeRequested) {
                     matches++;
                 }
